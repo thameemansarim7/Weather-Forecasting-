@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Weather</title>
+  <style>
+    :root {
+      --glass-bg: rgba(255, 255, 255, 0.15);
+      --white-text: #ffffff;
+      --primary-color: #00aaff;
+      --primary-dark: #0088cc;
+      --secondary-color: #007bff;
+      --secondary-dark: #005dc1;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #000;
+      color: var(--white-text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    video#background-video {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      object-fit: cover;
+      z-index: -1;
+      opacity: 0.7;
+      transition: opacity 1s ease;
+    }
+
+    .container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 700px;
+      padding: 30px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(8px);
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 0 30px rgba(255,255,255,0.2);
+      animation: slideUp 0.7s ease forwards;
+      opacity: 0;
+      transition: all 0.5s ease;
+    }
+
+    .container:hover {
+      box-shadow: 0 0 40px rgba(0,170,255,0.3);
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translate(-50%, 60%); }
+      to { opacity: 1; transform: translate(-50%, -50%); }
+    }
+
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      color: var(--primary-color);
+      text-shadow: 0 0 5px rgba(0,170,255,0.5);
+      transition: all 0.3s ease;
+    }
+
+    h1:hover {
+      text-shadow: 0 0 15px rgba(0,170,255,0.8);
+    }
+
+    .search-box {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .search-box input, .search-box button {
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      font-size: 1em;
+      transition: all 0.3s ease;
+    }
+
+    .search-box input {
+      width: 70%;
+      background: rgba(255, 255, 255, 0.9);
+      padding-left: 15px;
+      margin-right: 8px;
+      box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+    }
+
+    .search-box button {
+      background: var(--secondary-color);
+      color: #fff;
+      cursor: pointer;
+      width: 20%;
+      font-weight: bold;
+      box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    }
+
+    .search-box button:hover {
+      background: var(--secondary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 2px 10px rgba(0, 123, 255, 0.7);
+    }
+
+    .weather-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 15px 0;
+      transition: all 0.5s ease;
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+    }
+
+    .weather-info.active {
+      max-height: 600px;
+      opacity: 1;
+    }
+
+    .weather-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      width: 100%;
+    }
+
+    #weatherIcon {
+      margin: 0 15px;
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+      transition: all 0.3s ease;
+      width: 80px;
+      height: 80px;
+    }
+
+    .city-info {
+      text-align: left;
+    }
+
+    #cityName {
+      font-size: 2em;
+      margin: 0;
+      font-weight: bold;
+    }
+
+    .current-weather {
+      margin: 0;
+      padding: 15px;
+      border-radius: 15px;
+      background: rgba(0, 0, 0, 0.2);
+      width: 95%;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .weather-stat {
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      text-align: center;
+      width: 22%;
+    }
+
+    .weather-stat .icon {
+      font-size: 1.5em;
+      margin-bottom: 5px;
+    }
+
+    .weather-stat .value {
+      font-size: 1.1em;
+      font-weight: bold;
+    }
+
+    .weather-stat .label {
+      font-size: 0.8em;
+      opacity: 0.7;
+    }
+
+    #predictions {
+      margin-top: 20px;
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 15px;
+      padding: 0;
+      transition: all 0.5s ease;
+      width: 95%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #predictions.active {
+      opacity: 1;
+      max-height: 500px;
+      padding: 15px;
+    }
+
+    .city-links {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .city-link {
+      padding: 5px 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .loading {
+      display: none;
+      width: 40px;
+      height: 40px;
+      margin: 20px auto;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      border-top-color: var(--primary-color);
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 700px) {
+      .container {
+        padding: 20px;
+        width: 95%;
+      }
+
+      .current-weather {
+        flex-wrap: wrap;
+      }
+
+      .weather-stat {
+        width: 45%;
+        margin-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <video id="background-video" autoplay muted loop playsinline>
+    <source src="{{ url_for('static', filename='default.mp4') }}" type="video/mp4" />
+  </video>
+
+  <div class="container">
+    <h1>Smart Weather</h1>
+    <form id="weatherForm">
+      <div class="search-box">
+        <input type="text" id="cityInput" placeholder="Enter city name" required autocomplete="off" />
+        <button type="submit">Search</button>
+      </div>
+    </form>
+
+    <div class="city-links">
+      <span class="city-link" onclick="searchCity('London')">London</span>
+      <span class="city-link" onclick="searchCity('New York')">New York</span>
+      <span class="city-link" onclick="searchCity('Tokyo')">Tokyo</span>
+      <span class="city-link" onclick="searchCity('Sydney')">Sydney</span>
+      <span class="city-link" onclick="searchCity('Paris')">Paris</span>
+    </div>
+
+    <div class="loading" id="loadingSpinner"></div>
+
+    <div class="weather-info" id="weatherInfo">
+      <div class="weather-header">
+        <img id="weatherIcon" src="" alt="Weather Icon"/>
+        <div class="city-info">
+          <h2 id="cityName">City</h2>
+          <p id="weatherCondition"></p>
+        </div>
+      </div>
+
+      <div class="current-weather">
+        <div class="weather-stat">
+          <div class="icon">🌡</div>
+          <div class="value" id="temperature"></div>
+          <div class="label">Temperature</div>
+        </div>
+        <div class="weather-stat">
+          <div class="icon">💧</div>
+          <div class="value" id="humidity"></div>
+          <div class="label">Humidity</div>
+        </div>
+        <div class="weather-stat">
+          <div class="icon">💨</div>
+          <div class="value" id="wind"></div>
+          <div class="label">Wind Speed</div>
+        </div>
+        <div class="weather-stat">
+          <div class="icon">📊</div>
+          <div class="value" id="pressure"></div>
+          <div class="label">Pressure</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="predictions"></div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const form = document.getElementById("weatherForm");
+      const input = document.getElementById("cityInput");
+      const loadingSpinner = document.getElementById("loadingSpinner");
+      const weatherInfo = document.getElementById("weatherInfo");
+      const predictions = document.getElementById("predictions");
+
+      input.focus();
+
+      async function getWeatherData(city) {
+        const weatherIcon = document.getElementById("weatherIcon");
+
+        predictions.innerHTML = "";
+        predictions.classList.remove("active");
+        weatherInfo.classList.remove("active");
+        loadingSpinner.style.display = "block";
+
+        try {
+          const formData = new FormData();
+          formData.append("city", city);
+
+          const res = await fetch("/predict", {
+            method: "POST",
+            body: formData
+          });
+
+          loadingSpinner.style.display = "none";
+
+          if (!res.ok) {
+            const errorData = await res.json();
+            predictions.innerHTML = `<div class="error-message">${errorData.error || "Something went wrong."}</div>`;
+            predictions.classList.add("active");
+            return;
+          }
+
+          const data = await res.json();
+          const bgVideo = document.getElementById("background-video");
+          const source = bgVideo.querySelector("source");
+          if (source.src !== `/static/${data.video}`) {
+            bgVideo.style.opacity = "0";
+            setTimeout(() => {
+              source.src = `/static/${data.video}`;
+              bgVideo.load();
+              bgVideo.onloadeddata = () => {
+                bgVideo.style.opacity = "0.7";
+              };
+            }, 500);
+          }
+
+          document.getElementById("cityName").textContent = data.city;
+          document.getElementById("weatherCondition").textContent = data.condition;
+          document.getElementById("temperature").textContent = data.temperature;
+          document.getElementById("humidity").textContent = data.humidity;
+          document.getElementById("wind").textContent = data.wind;
+          document.getElementById("pressure").textContent = data.pressure;
+          weatherIcon.src = `/static/icons/${data.icon}`;
+
+          weatherInfo.classList.add("active");
+
+          if (data.predictions && data.predictions.length > 0) {
+            predictions.innerHTML = `<h3>Upcoming Predictions</h3><div class="prediction-details">${
+              data.predictions.map(p => `
+                <div class="prediction-detail">
+                  <div class="label">${p.day}</div>
+                  <div class="value">${p.forecast}</div>
+                </div>
+              `).join("")
+            }</div>`;
+            predictions.classList.add("active");
+          }
+
+        } catch (error) {
+          loadingSpinner.style.display = "none";
+          predictions.innerHTML = `<div class="error-message">Failed to fetch data.</div>`;
+          predictions.classList.add("active");
+        }
+      }
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const city = input.value.trim();
+        if (city) getWeatherData(city);
+      });
+
+      window.searchCity = function(city) {
+        input.value = city;
+        getWeatherData(city);
+      };
+    });
+  </script>
+</body>
+</html>
